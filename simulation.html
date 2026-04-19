@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>סימולציה: שיחת ביטול חוזה</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #1D9E75;
+      --green-light: #25c490;
+      --green-dim: rgba(29, 158, 117, 0.15);
+      --red: #e05555;
+      --red-dim: rgba(224, 85, 85, 0.13);
+      --bg: #0f1117;
+      --surface: #181d27;
+      --surface2: #1e2535;
+      --border: rgba(255,255,255,0.07);
+      --text: #e8eaf0;
+      --muted: #8a92a6;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Heebo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ─── LOADING ─── */
+    #loading-screen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 1000;
+      transition: opacity 0.6s ease;
+    }
+    #loading-screen.hidden { opacity: 0; pointer-events: none; }
+
+    .loading-logo {
+      width: 72px; height: 72px;
+      border-radius: 20px;
+      background: var(--green-dim);
+      border: 2px solid var(--green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      margin-bottom: 28px;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(29,158,117,0.4); }
+      50% { box-shadow: 0 0 0 18px rgba(29,158,117,0); }
+    }
+
+    .loading-title {
+      font-size: 22px; font-weight: 700;
+      color: var(--text); margin-bottom: 8px; text-align: center;
+    }
+    .loading-sub {
+      font-size: 14px; color: var(--muted); margin-bottom: 40px; text-align: center;
+    }
+    .loading-bar-wrap {
+      width: 200px; height: 4px;
+      background: var(--surface2); border-radius: 4px; overflow: hidden;
+    }
+    .loading-bar {
+      height: 100%; width: 0%;
+      background: var(--green);
+      border-radius: 4px;
+      animation: loadBar 1.8s ease forwards;
+    }
+    @keyframes loadBar { to { width: 100%; } }
+
+    /* ─── MAIN WRAPPER ─── */
+    #app {
+      height: 100vh;
+      box-sizing: border-box;
+      display: flex; flex-direction: column;
+      align-items: center;
+      padding: 14px 16px 14px;
+      overflow: hidden;
+    }
+
+    /* ─── PROGRESS BAR ─── */
+    #progress-bar {
+      width: 100%; max-width: 640px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; margin-bottom: 10px;
+      opacity: 0; transition: opacity 0.4s 0.2s;
+    }
+    #progress-bar.visible { opacity: 1; }
+
+    .prog-dot {
+      width: 36px; height: 6px; border-radius: 3px;
+      background: var(--surface2);
+      transition: background 0.4s ease, transform 0.3s;
+    }
+    .prog-dot.active { background: var(--green); transform: scaleY(1.4); }
+    .prog-dot.done { background: rgba(29,158,117,0.45); }
+
+    /* ─── CARD ─── */
+    .card {
+      width: 100%; max-width: 640px;
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 26px 18px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--surface2) transparent;
+      animation: slideIn 0.45s cubic-bezier(.22,.68,0,1.2) both;
+    }
+    .card::-webkit-scrollbar { width: 4px; }
+    .card::-webkit-scrollbar-track { background: transparent; }
+    .card::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── BADGE ─── */
+    .badge {
+      display: inline-block;
+      background: var(--green-dim);
+      color: var(--green-light);
+      font-size: 12px; font-weight: 600;
+      padding: 3px 12px; border-radius: 20px;
+      border: 1px solid rgba(29,158,117,0.3);
+      margin-bottom: 12px; letter-spacing: 0.3px;
+    }
+
+    /* ─── HEADINGS ─── */
+    .screen-title {
+      font-size: 22px; font-weight: 800;
+      line-height: 1.3; margin-bottom: 12px;
+      color: var(--text);
+    }
+    .screen-body {
+      font-size: 14px; color: var(--muted);
+      line-height: 1.7; margin-bottom: 16px;
+    }
+
+    /* ─── STEPS LIST ─── */
+    .steps-list {
+      list-style: none; margin-bottom: 16px;
+    }
+    .steps-list li {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 7px 0; border-bottom: 1px solid var(--border);
+      font-size: 13.5px; color: var(--text); line-height: 1.5;
+    }
+    .steps-list li:last-child { border-bottom: none; }
+    .step-num {
+      flex-shrink: 0;
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--green-dim); border: 1px solid var(--green);
+      color: var(--green-light); font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ─── STATUS BOX ─── */
+    .status-box {
+      background: var(--surface2);
+      border-right: 3px solid var(--green);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 13.5px; color: var(--muted);
+      margin-bottom: 14px; line-height: 1.5;
+    }
+
+    /* ─── DIALOG BOX ─── */
+    .dialog-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      margin-bottom: 14px;
+    }
+    .dialog-label {
+      font-size: 10px; font-weight: 700;
+      color: var(--green-light); letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 7px;
+    }
+    .dialog-text {
+      font-size: 13.5px; color: var(--text); line-height: 1.65;
+    }
+
+    /* ─── SYSTEM BOX ─── */
+    .system-box {
+      background: #131825;
+      border: 1px solid rgba(29,158,117,0.2);
+      border-radius: var(--radius-sm);
+      padding: 11px 16px;
+      margin-bottom: 14px;
+    }
+    .system-box-label {
+      font-size: 10px; font-weight: 700;
+      color: var(--green); letter-spacing: 1px;
+      margin-bottom: 7px;
+    }
+    .system-box-text {
+      font-size: 13.5px; color: #b0c4b1; line-height: 1.7;
+    }
+    .system-box-text strong { color: var(--text); }
+
+    /* ─── QUESTION ─── */
+    .question-text {
+      font-size: 15.5px; font-weight: 700;
+      color: var(--text); margin-bottom: 12px;
+    }
+
+    /* ─── OPTIONS ─── */
+    .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+
+    .option-btn {
+      width: 100%;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 16px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 14.5px; font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      text-align: right;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      line-height: 1.6;
+    }
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--green);
+      background: var(--green-dim);
+      transform: translateX(-3px);
+    }
+    .option-btn:disabled { cursor: not-allowed; }
+    .option-btn.correct {
+      border-color: var(--green);
+      background: var(--green-dim);
+      color: var(--green-light);
+    }
+    .option-btn.wrong {
+      border-color: var(--red);
+      background: var(--red-dim);
+      color: var(--red);
+    }
+
+    /* ─── FEEDBACK ─── */
+    .feedback {
+      display: none;
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 13px; line-height: 1.55;
+      margin-bottom: 10px;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+    .feedback.show { display: block; }
+    .feedback.correct-fb {
+      background: var(--green-dim);
+      border: 1px solid rgba(29,158,117,0.35);
+      color: #a3e8cd;
+    }
+    .feedback.wrong-fb {
+      background: var(--red-dim);
+      border: 1px solid rgba(224,85,85,0.3);
+      color: #f0a0a0;
+    }
+    .feedback-icon { font-size: 16px; margin-left: 6px; }
+
+    /* ─── BUTTONS ─── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 8px;
+      background: var(--green);
+      color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      padding: 11px 24px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn:hover { background: var(--green-light); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn.secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+    .btn.secondary:hover { border-color: var(--green); color: var(--green-light); background: var(--green-dim); }
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    /* ─── COMPLETION ─── */
+    .completion-header { text-align: center; margin-bottom: 18px; }
+    .completion-icon {
+      font-size: 40px; margin-bottom: 10px;
+      animation: bounceIn 0.6s cubic-bezier(.22,.68,0,1.3) both;
+    }
+    @keyframes bounceIn {
+      from { transform: scale(0.3); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .completion-title {
+      font-size: 22px; font-weight: 800; color: var(--green-light);
+      margin-bottom: 4px;
+    }
+    .completion-sub { font-size: 13.5px; color: var(--muted); }
+
+    .checkmarks { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .checkmark-item {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 13.5px; color: var(--text); line-height: 1.4;
+      animation: slideIn 0.4s ease both;
+    }
+    .checkmark-item:nth-child(1) { animation-delay: 0.1s; }
+    .checkmark-item:nth-child(2) { animation-delay: 0.2s; }
+    .checkmark-item:nth-child(3) { animation-delay: 0.3s; }
+    .checkmark-item:nth-child(4) { animation-delay: 0.4s; }
+    .check-icon {
+      flex-shrink: 0;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--green-dim);
+      color: var(--green-light);
+      font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .tip-box {
+      background: var(--green-dim);
+      border: 1.5px solid rgba(29,158,117,0.4);
+      border-radius: var(--radius-sm);
+      padding: 13px 16px;
+      font-size: 13.5px; color: #a3e8cd;
+      line-height: 1.65;
+      margin-bottom: 18px;
+      text-align: center; font-weight: 500;
+    }
+
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+    .hidden { display: none !important; }
+    .text-center { text-align: center; }
+
+    /* ─── SIDEBAR ─── */
+    #sidebar {
+      position: fixed;
+      right: 0; top: 0;
+      width: 210px; height: 100vh;
+      background: #13181f;
+      border-left: 2px solid var(--green);
+      display: none;
+      flex-direction: column;
+      padding: 32px 0 24px;
+      z-index: 100;
+      overflow: hidden;
+    }
+    #sidebar.visible { display: flex; }
+
+    .sb-title {
+      font-size: 11px; font-weight: 700;
+      color: var(--green); letter-spacing: 1.2px;
+      text-transform: uppercase;
+      padding: 0 20px 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .sb-step {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 20px;
+      border-right: 3px solid transparent;
+      transition: background 0.25s, border-color 0.25s;
+      cursor: default;
+    }
+    .sb-step.active {
+      background: rgba(29,158,117,0.10);
+      border-right-color: var(--green);
+    }
+
+    .sb-num {
+      flex-shrink: 0;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      color: var(--muted);
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.25s, color 0.25s, border-color 0.25s;
+      margin-top: 2px;
+    }
+    .sb-step.active .sb-num {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    .sb-label {
+      font-size: 12.5px; font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 2px;
+      transition: color 0.25s;
+    }
+    .sb-step.active .sb-label { color: var(--text); }
+    .sb-desc {
+      font-size: 10.5px; color: #555e72; line-height: 1.5;
+      transition: color 0.25s;
+    }
+    .sb-step.active .sb-desc { color: var(--muted); }
+
+    /* push main content away from sidebar on wide screens */
+    @media (min-width: 900px) {
+      #app { padding-right: 230px; }
+    }
+    @media (max-width: 899px) {
+      #sidebar { display: none !important; }
+    }
+
+    /* hide sidebar from print */
+    @media print { #sidebar { display: none !important; } }
+
+    /* ─── PRINT CARD ─── */
+    #print-card {
+      display: none;
+      direction: rtl;
+      font-family: 'Heebo', sans-serif;
+    }
+
+    @media print {
+      body > *:not(#print-card) { display: none !important; }
+      #print-card {
+        display: block !important;
+        width: 105mm; height: 148mm;
+        margin: 0 auto;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      @page {
+        size: A6 portrait;
+        margin: 6mm;
+      }
+    }
+
+    .print-card-inner {
+      width: 105mm; height: 148mm;
+      border: 2.5px solid #1D9E75;
+      border-radius: 10px;
+      padding: 14px 16px 12px;
+      box-sizing: border-box;
+      background: #fff;
+      display: flex; flex-direction: column;
+      font-family: 'Heebo', sans-serif;
+      direction: rtl;
+    }
+
+    .pc-header {
+      text-align: center;
+      border-bottom: 1.5px solid #1D9E75;
+      padding-bottom: 9px;
+      margin-bottom: 10px;
+    }
+    .pc-title {
+      font-size: 14px; font-weight: 800;
+      color: #1D9E75; margin-bottom: 2px;
+      letter-spacing: 0.2px;
+    }
+    .pc-sub {
+      font-size: 9px; color: #888; font-weight: 500;
+    }
+
+    .pc-steps { flex: 1; display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+
+    .pc-step {
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .pc-step-icon {
+      flex-shrink: 0;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #1D9E75;
+      color: #fff;
+      font-size: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; margin-top: 1px;
+    }
+    .pc-step-body { flex: 1; }
+    .pc-step-label {
+      font-size: 11.5px; font-weight: 800;
+      color: #1a1a1a; margin-bottom: 1px;
+    }
+    .pc-step-desc {
+      font-size: 9.5px; color: #555; line-height: 1.45;
+    }
+
+    .pc-footer {
+      background: #1D9E75;
+      border-radius: 7px;
+      padding: 8px 12px;
+      text-align: center;
+    }
+    .pc-footer-text {
+      font-size: 11px; font-weight: 700;
+      color: #fff; line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div class="loading-logo">&#128222;</div>
+  <div class="loading-title">&#1505;&#1497;&#1502;&#1493;&#1500;&#1510;&#1497;&#1492;: &#1513;&#1497;&#1495;&#1514; &#1489;&#1497;&#1496;&#1493;&#1500; &#1495;&#1493;&#1494;&#1492;</div>
+  <div class="loading-sub">&#1496;&#1493;&#1506;&#1503; &#1505;&#1489;&#1497;&#1489;&#1514; &#1488;&#1497;&#1502;&#1493;&#1503;...</div>
+  <div class="loading-bar-wrap">
+    <div class="loading-bar"></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sb-title">5 שלבי השיחה</div>
+
+  <div class="sb-step" id="sb-1">
+    <div class="sb-num">1</div>
+    <div>
+      <div class="sb-label">פתח</div>
+      <div class="sb-desc">שם החברה + שמך + הצעת עזרה</div>
+    </div>
+  </div>
+  <div class="sb-step" id="sb-2">
+    <div class="sb-num">2</div>
+    <div>
+      <div class="sb-label">הבן</div>
+      <div class="sb-desc">תן לו לדבר + סכם בחזרה</div>
+    </div>
+  </div>
+  <div class="sb-step" id="sb-3">
+    <div class="sb-num">3</div>
+    <div>
+      <div class="sb-label">טפל</div>
+      <div class="sb-desc">פתח מנהלת + חפש + מסור בדיוק</div>
+    </div>
+  </div>
+  <div class="sb-step" id="sb-4">
+    <div class="sb-num">4</div>
+    <div>
+      <div class="sb-label">וודא</div>
+      <div class="sb-desc">"האם עניתי על שאלתך?"</div>
+    </div>
+  </div>
+  <div class="sb-step" id="sb-5">
+    <div class="sb-num">5</div>
+    <div>
+      <div class="sb-label">סגור</div>
+      <div class="sb-desc">תודה + שם + סיכום</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN APP -->
+<div id="app">
+
+  <!-- PROGRESS BAR -->
+  <div id="progress-bar">
+    <div class="prog-dot" id="dot-1"></div>
+    <div class="prog-dot" id="dot-2"></div>
+    <div class="prog-dot" id="dot-3"></div>
+    <div class="prog-dot" id="dot-4"></div>
+    <div class="prog-dot" id="dot-5"></div>
+  </div>
+
+  <!-- ══ SCREEN 1 — INTRO ══ -->
+  <div id="screen-1" class="card hidden">
+    <div class="badge">&#128203; הכנה לשיחה</div>
+    <div class="screen-title">סימולציה:<br/>שיחת ביטול חוזה</div>
+    <div class="screen-body">
+      השעה 10:15. אתה נציג שירות במוקד. מתקשר אליך לקוח שרוצה לבטל את החוזה שלו.<br/><br/>
+      <strong style="color: var(--text);">המשימה שלך:</strong> לנהל את השיחה בצורה מסודרת —<br/>
+      לא לאלתר, לא לנחש, לא לענות מהראש.
+    </div>
+
+    <div class="divider"></div>
+    <div style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:16px;letter-spacing:0.5px;">5 השלבים שתתרגל:</div>
+
+    <ul class="steps-list">
+      <li>
+        <span class="step-num">1</span>
+        <span><strong>עונה לשיחה</strong> — מציג את עצמך ואת שם החברה</span>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <span><strong>מבין מה הלקוח רוצה</strong> — תן לו לדבר, סכם בחזרה</span>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <span><strong>טפל</strong> — פתח את מנהלת היעד, מצא את הנוהל ע"פ מילת מפתח, וענה בדיוק</span>
+      </li>
+      <li>
+        <span class="step-num">4</span>
+        <span><strong>שאל אם הלקוח הבין</strong></span>
+      </li>
+      <li>
+        <span class="step-num">5</span>
+        <span><strong>סיים יפה</strong> — תודה, שם הלקוח, סיכום קצר</span>
+      </li>
+    </ul>
+
+    <button class="btn" style="margin-top:auto;" onclick="goTo(2)">יאללה, מתחילים &#8592;</button>
+  </div>
+
+  <!-- ══ SCREEN 2 — Q1 ══ -->
+  <div id="screen-2" class="card hidden">
+    <div class="badge">שלב 1 — פתיחה</div>
+    <div class="status-box">&#128243; הטלפון מצלצל. אתה מרים. הלקוח ממתין בקו.</div>
+    <div class="question-text">מה אתה אומר?</div>
+
+    <div class="options" id="options-2">
+      <button class="option-btn" onclick="answer(2,'wrong','fb-2-a')">א.&nbsp; "כן, שלום, במה אפשר לעזור?"</button>
+      <button class="option-btn" onclick="answer(2,'correct','fb-2-b')">ב.&nbsp; "שלום, חברת X, אני [שמך]. במה אוכל לעזור?"</button>
+      <button class="option-btn" onclick="answer(2,'wrong','fb-2-c')">ג.&nbsp; "מה שלומך, עם מי יש לי הכבוד?"</button>
+    </div>
+
+    <div id="fb-2-a" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      <strong>פתיחה קצרה מדי</strong> — הלקוח לא יודע אם הגיע למקום הנכון ומי אתה.
+    </div>
+    <div id="fb-2-b" class="feedback correct-fb">
+      <span class="feedback-icon">&#9989;</span>
+      <strong>מעולה!</strong> שם החברה + שם הנציג + הצעת עזרה. הלקוח מיד יודע שהוא בידיים טובות.
+    </div>
+    <div id="fb-2-c" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      לשאול "עם מי יש לי הכבוד" לפני שהצגת את עצמך — <strong>זה הפוך.</strong>
+    </div>
+
+    <div class="btn-row" id="actions-2">
+      <button class="btn secondary hidden" id="retry-2" onclick="retry(2)">&#8635; נסה שוב</button>
+      <button class="btn hidden" id="next-2" onclick="goTo(3)">המשך &#8592;</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 3 — Q2 ══ -->
+  <div id="screen-3" class="card hidden">
+    <div class="badge">שלב 2 — הבנת הפנייה</div>
+
+    <div class="dialog-box">
+      <div class="dialog-label">&#128172; הלקוח אומר:</div>
+      <div class="dialog-text">
+        "תשמע, אני רוצה לבטל את החוזה שלי. שמעתי שיש קנס, אבל חבר שלי אמר לי שאם אתה לקוח מעל שנה — אין קנס. אני לקוח כבר שנתיים, אז מה הסיפור?"
+      </div>
+    </div>
+
+    <div class="question-text">הלקוח סיים לדבר. מה אתה עושה עכשיו?</div>
+
+    <div class="options" id="options-3">
+      <button class="option-btn" onclick="answer(3,'wrong','fb-3-a')">א.&nbsp; אומר לו מיד: "נכון, מעל שנה פטור מקנס"</button>
+      <button class="option-btn" onclick="answer(3,'correct','fb-3-b')">ב.&nbsp; מסכם בחזרה ופותח את המנהלת</button>
+      <button class="option-btn" onclick="answer(3,'wrong','fb-3-c')">ג.&nbsp; שואל אותו: "למה אתה רוצה לבטל?"</button>
+    </div>
+
+    <div id="fb-3-a" class="feedback wrong-fb">
+      <span class="feedback-icon">&#128721;</span>
+      <strong>עצור!</strong> לא מוסרים מידע לפני שבדקנו במנהלת. תמיד: קודם מנהלת — אחר כך תשובה.
+    </div>
+    <div id="fb-3-b" class="feedback correct-fb">
+      <span class="feedback-icon">&#9989;</span>
+      <strong>מעולה!</strong> סיכום בחזרה מראה שהאזנת ומונע אי-הבנות.
+    </div>
+    <div id="fb-3-c" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      שאלת "למה" עלולה להיתפס כ<strong>חסמה</strong>. קודם הבן מה הוא רוצה — ואז טפל.
+    </div>
+
+    <div class="btn-row" id="actions-3">
+      <button class="btn secondary hidden" id="retry-3" onclick="retry(3)">&#8635; נסה שוב</button>
+      <button class="btn hidden" id="next-3" onclick="goTo(4)">המשך &#8592;</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 4 — Q3 ══ -->
+  <div id="screen-4" class="card hidden">
+    <div class="badge">שלב 3 — חיפוש במנהלת</div>
+    <div class="status-box">&#128187; פתחת את מנהלת היעד. יש לפניך תיבת חיפוש. הלקוח ממתין.</div>
+    <div class="question-text">מה אתה מקליד בחיפוש?</div>
+
+    <div class="options" id="options-4">
+      <button class="option-btn" onclick="answer(4,'wrong','fb-4-a')">א.&nbsp; "לקוחות ותיקים"</button>
+      <button class="option-btn" onclick="answer(4,'wrong','fb-4-b')">ב.&nbsp; "חוזים"</button>
+      <button class="option-btn" onclick="answer(4,'correct','fb-4-c')">ג.&nbsp; "ביטול חוזה"</button>
+    </div>
+
+    <div id="fb-4-a" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      המנהלת מאורגנת לפי <strong>פעולות</strong> — לא לפי סוג לקוח.
+    </div>
+    <div id="fb-4-b" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      "חוזים" מחזירה תוצאות <strong>רבות מדי</strong>. חפש מילה ספציפית יותר.
+    </div>
+    <div id="fb-4-c" class="feedback correct-fb">
+      <span class="feedback-icon">&#9989;</span>
+      <strong>מעולה!</strong> מילת מפתח ספציפית = תוצאות מדויקות ומהירות.
+    </div>
+
+    <div class="btn-row" id="actions-4">
+      <button class="btn secondary hidden" id="retry-4" onclick="retry(4)">&#8635; נסה שוב</button>
+      <button class="btn hidden" id="next-4" onclick="goTo(5)">המשך &#8592;</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 5 — Q4 ══ -->
+  <div id="screen-5" class="card hidden">
+    <div class="badge">שלב 4 — מסירת מידע</div>
+
+    <div class="system-box">
+      <div class="system-box-label">&#128196; מנהלת היעד — נוהל ביטול חוזה</div>
+      <div class="system-box-text">
+        <strong>לקוח שביטל אחרי 12 חודשים</strong> — פטור מקנס.<br/>
+        <strong>לקוח שביטל לפני 12 חודשים</strong> — קנס של 200 ש"ח.
+      </div>
+    </div>
+
+    <div class="question-text">הלקוח לקוח שנתיים. הוא ממתין לתשובה. מה אתה אומר?</div>
+
+    <div class="options" id="options-5">
+      <button class="option-btn" onclick="answer(5,'wrong','fb-5-a')">א.&nbsp; קורא לו את הנוהל המלא כפי שכתוב</button>
+      <button class="option-btn" onclick="answer(5,'correct','fb-5-b')">ב.&nbsp; "בדקתי — מכיוון שאתה לקוח מעל שנה, אתה פטור מקנס. אעבד את הבקשה עכשיו."</button>
+      <button class="option-btn" onclick="answer(5,'wrong','fb-5-c')">ג.&nbsp; "נכון מה שחברך אמר, אין קנס"</button>
+    </div>
+
+    <div id="fb-5-a" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      לקרוא את הנוהל המלא ללקוח נשמע <strong>רובוטי ומבלבל</strong>. נסח בשפה אנושית.
+    </div>
+    <div id="fb-5-b" class="feedback correct-fb">
+      <span class="feedback-icon">&#9989;</span>
+      <strong>מושלם!</strong> קרא &#8592; הבן &#8592; נסח בשפה פשוטה &#8592; מסור. זו הנוסחה.
+    </div>
+    <div id="fb-5-c" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      תמיד מסתמכים על מה שכתוב <strong>במנהלת</strong> — לא על מה שמישהו שמע.
+    </div>
+
+    <div class="btn-row" id="actions-5">
+      <button class="btn secondary hidden" id="retry-5" onclick="retry(5)">&#8635; נסה שוב</button>
+      <button class="btn hidden" id="next-5" onclick="goTo(6)">המשך &#8592;</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 6 — COMPLETION ══ -->
+  <div id="screen-6" class="card hidden">
+    <div class="completion-header">
+      <div class="completion-icon">&#127942;</div>
+      <div class="completion-title">כל הכבוד!</div>
+      <div class="completion-sub">סיימת את הסימולציה בהצלחה</div>
+    </div>
+
+    <div class="checkmarks">
+      <div class="checkmark-item">
+        <span class="check-icon">&#10003;</span>
+        <span>פתחת את השיחה בצורה <strong>מקצועית</strong></span>
+      </div>
+      <div class="checkmark-item">
+        <span class="check-icon">&#10003;</span>
+        <span>סיכמת את הפנייה <strong>לפני שעברת לטיפול</strong></span>
+      </div>
+      <div class="checkmark-item">
+        <span class="check-icon">&#10003;</span>
+        <span>חיפשת במנהלת לפי <strong>מילת מפתח מדויקת</strong></span>
+      </div>
+      <div class="checkmark-item">
+        <span class="check-icon">&#10003;</span>
+        <span>מסרת מידע <strong>בשפה פשוטה</strong> — לא ציטוט</span>
+      </div>
+    </div>
+
+    <div class="tip-box">
+      &#128161; <strong>זכור לשיחה הבאה:</strong><br/>
+      פתיחה מסודרת + מנהלת פתוחה + מידע מדויק + סגירה חמה = <strong>שיחה מנצחת.</strong>
+    </div>
+
+    <div class="text-center" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:auto;">
+      <button class="btn" onclick="restart()">&#8635; &nbsp;התחל מחדש</button>
+      <button class="btn secondary" onclick="printCard()">&#128438; &nbsp;הדפס כרטיס עזר</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- PRINT CARD (hidden, shown only on print) -->
+<div id="print-card">
+  <div class="print-card-inner">
+    <div class="pc-header">
+      <div class="pc-title">5 שלבי השיחה המנצחת</div>
+      <div class="pc-sub">&#128205; שים אותי ליד המחשב שלך</div>
+    </div>
+
+    <div class="pc-steps">
+      <div class="pc-step">
+        <div class="pc-step-icon">&#128222;</div>
+        <div class="pc-step-body">
+          <div class="pc-step-label">1. פתח</div>
+          <div class="pc-step-desc">שם החברה + שמך + הצעת עזרה</div>
+        </div>
+      </div>
+      <div class="pc-step">
+        <div class="pc-step-icon">&#128065;</div>
+        <div class="pc-step-body">
+          <div class="pc-step-label">2. הבן</div>
+          <div class="pc-step-desc">תן ללקוח לדבר + סכם בחזרה</div>
+        </div>
+      </div>
+      <div class="pc-step">
+        <div class="pc-step-icon">&#128196;</div>
+        <div class="pc-step-body">
+          <div class="pc-step-label">3. טפל</div>
+          <div class="pc-step-desc">פתח מנהלת + חפש מילת מפתח + מסור בדיוק</div>
+        </div>
+      </div>
+      <div class="pc-step">
+        <div class="pc-step-icon">&#10067;</div>
+        <div class="pc-step-body">
+          <div class="pc-step-label">4. וודא</div>
+          <div class="pc-step-desc">"האם עניתי על שאלתך?"</div>
+        </div>
+      </div>
+      <div class="pc-step">
+        <div class="pc-step-icon">&#127881;</div>
+        <div class="pc-step-body">
+          <div class="pc-step-label">5. סגור</div>
+          <div class="pc-step-desc">תודה + שם הלקוח + סיכום קצר</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pc-footer">
+      <div class="pc-footer-text">&#128274; זכור: לא מהראש. תמיד מהמנהלת.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      var ls = document.getElementById('loading-screen');
+      ls.classList.add('hidden');
+      goTo(1);
+    }, 2000);
+  });
+
+  // screen → sidebar step (screens 2-5 map to steps 1-4)
+  var screenToStep = { 2: 1, 3: 2, 4: 3, 5: 4 };
+
+  function goTo(n) {
+    document.querySelectorAll('[id^="screen-"]').forEach(function(s) {
+      s.classList.add('hidden');
+    });
+    var target = document.getElementById('screen-' + n);
+    if (!target) return;
+    target.classList.remove('hidden');
+    target.style.animation = 'none';
+    target.offsetHeight;
+    target.style.animation = '';
+    updateProgress(n);
+    updateSidebar(n);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateSidebar(n) {
+    var sb = document.getElementById('sidebar');
+    var isQuestion = (n >= 2 && n <= 5);
+    sb.classList.toggle('visible', isQuestion);
+    for (var i = 1; i <= 5; i++) {
+      var el = document.getElementById('sb-' + i);
+      el.classList.toggle('active', isQuestion && screenToStep[n] === i);
+    }
+  }
+
+  function updateProgress(n) {
+    var bar = document.getElementById('progress-bar');
+    if (n <= 1) { bar.classList.remove('visible'); return; }
+    bar.classList.add('visible');
+    for (var i = 1; i <= 5; i++) {
+      var dot = document.getElementById('dot-' + i);
+      var dotScreen = i + 1;
+      dot.classList.remove('active', 'done');
+      if (dotScreen < n) dot.classList.add('done');
+      else if (dotScreen === n) dot.classList.add('active');
+    }
+  }
+
+  function answer(screenNum, result, fbId) {
+    if (result === 'correct') playCorrect(); else playWrong();
+    var opts = document.getElementById('options-' + screenNum);
+    var btns = opts.querySelectorAll('.option-btn');
+    btns.forEach(function(b) {
+      b.disabled = true;
+      if (b.getAttribute('onclick').indexOf(fbId) !== -1) {
+        b.classList.add(result === 'correct' ? 'correct' : 'wrong');
+      }
+    });
+    document.getElementById(fbId).classList.add('show');
+    if (result === 'correct') {
+      document.getElementById('next-' + screenNum).classList.remove('hidden');
+    } else {
+      document.getElementById('retry-' + screenNum).classList.remove('hidden');
+    }
+  }
+
+  function retry(screenNum) {
+    var opts = document.getElementById('options-' + screenNum);
+    opts.querySelectorAll('.option-btn').forEach(function(b) {
+      b.disabled = false;
+      b.classList.remove('correct', 'wrong');
+    });
+    document.querySelectorAll('[id^="fb-' + screenNum + '-"]').forEach(function(f) {
+      f.classList.remove('show');
+    });
+    document.getElementById('retry-' + screenNum).classList.add('hidden');
+    document.getElementById('next-' + screenNum).classList.add('hidden');
+  }
+
+  function restart() {
+    [2, 3, 4, 5].forEach(function(s) { retry(s); });
+    document.getElementById('progress-bar').classList.remove('visible');
+    goTo(1);
+  }
+
+  function printCard() {
+    window.print();
+  }
+
+  var audioCtx = null;
+  function getCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playTone(freq, startTime, duration, ctx) {
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, startTime);
+    gain.gain.setValueAtTime(0.12, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+  }
+
+  function playCorrect() {
+    var ctx = getCtx();
+    var now = ctx.currentTime;
+    playTone(523, now, 0.15, ctx);
+    playTone(659, now + 0.16, 0.15, ctx);
+  }
+
+  function playWrong() {
+    var ctx = getCtx();
+    var now = ctx.currentTime;
+    playTone(300, now, 0.2, ctx);
+    playTone(200, now + 0.21, 0.2, ctx);
+  }
+</script>
+</body>
+</html>
