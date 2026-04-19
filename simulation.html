@@ -429,6 +429,52 @@
     /* hide sidebar from print */
     @media print { #sidebar { display: none !important; } }
 
+    /* ─── SCENARIO TAG ─── */
+    .scenario-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(29,158,117,0.08);
+      border: 1px solid rgba(29,158,117,0.2);
+      border-radius: 20px; padding: 3px 10px;
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .scenario-tag strong { color: var(--green-light); }
+
+    /* ─── QUIZ ─── */
+    .quiz-instructions {
+      font-size: 13px; color: var(--muted); line-height: 1.5;
+      background: var(--surface2); border-radius: var(--radius-sm);
+      padding: 10px 14px; border-right: 3px solid var(--green);
+      margin-bottom: 12px;
+    }
+    .quiz-list {
+      list-style: none; display: flex; flex-direction: column;
+      gap: 7px; margin-bottom: 12px;
+    }
+    .quiz-item {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      cursor: grab; user-select: none;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s, opacity 0.2s;
+    }
+    .quiz-item:active { cursor: grabbing; }
+    .quiz-item.dragging { opacity: 0.3; border-style: dashed; border-color: var(--green); }
+    .quiz-item.drag-over { border-color: var(--green); background: var(--green-dim); transform: scale(1.015); }
+    .quiz-pos {
+      flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+      background: var(--surface); border: 1.5px solid var(--border);
+      color: var(--muted); font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .quiz-handle { color: #3a4255; font-size: 17px; line-height: 1; flex-shrink: 0; }
+    .quiz-label { font-size: 13.5px; font-weight: 600; color: var(--text); flex: 1; }
+
+    /* progress dots — separators between scenario groups */
+    .prog-sep { width: 12px; flex-shrink: 0; }
+
     /* ─── PRINT CARD ─── */
     #print-card {
       display: none;
@@ -576,7 +622,13 @@
     <div class="prog-dot" id="dot-2"></div>
     <div class="prog-dot" id="dot-3"></div>
     <div class="prog-dot" id="dot-4"></div>
+    <div class="prog-sep"></div>
     <div class="prog-dot" id="dot-5"></div>
+    <div class="prog-dot" id="dot-6"></div>
+    <div class="prog-dot" id="dot-7"></div>
+    <div class="prog-dot" id="dot-8"></div>
+    <div class="prog-sep"></div>
+    <div class="prog-dot" id="dot-9"></div>
   </div>
 
   <!-- ══ SCREEN 1 — INTRO ══ -->
@@ -757,41 +809,224 @@
     </div>
   </div>
 
-  <!-- ══ SCREEN 6 — COMPLETION ══ -->
+  <!-- ══ SCREEN 6 — תרחיש 2 INTRO ══ -->
   <div id="screen-6" class="card hidden">
+    <div class="scenario-tag">&#128276; <strong>תרחיש 2</strong> מתוך 2</div>
+    <div class="screen-title">תלונה על חיוב שגוי</div>
+    <div class="screen-body">
+      לקוח חדש על הקו. הפעם הוא לא מגיע עם שאלה — הוא מגיע עם כעס.<br/><br/>
+      <strong style="color:var(--text);">המשימה שלך:</strong> לשמור על קור רוח, לאסוף את הפנייה, לבדוק במנהלת הידע — ולמסור תשובה מדויקת.
+    </div>
+    <div class="dialog-box">
+      <div class="dialog-label">&#128172; הלקוח אומר:</div>
+      <div class="dialog-text">"שלום, אני רוצה להבין למה חויבתי החודש 350 ש"ח במקום 200 ש"ח כמו תמיד. אף אחד לא הודיע לי על שינוי!"</div>
+    </div>
+    <button class="btn" style="margin-top:auto;" onclick="goTo(7)">מתחילים &#8592;</button>
+  </div>
+
+  <!-- ══ SCREEN 7 — ת"2 Q1 פתיחה ══ -->
+  <div id="screen-7" class="card hidden">
+    <div class="scenario-tag">&#128276; <strong>תרחיש 2</strong></div>
+    <div class="badge">שלב 1 — פתיחה</div>
+    <div class="question-text">הלקוח כועס ומחכה לתגובה שלך. מה אתה אומר?</div>
+    <div class="options" id="options-7">
+      <button class="option-btn" onclick="answer(7,'wrong','fb-7-a')">א.&nbsp; "זה לא אמור לקרות, בוא נבדוק"</button>
+      <button class="option-btn" onclick="answer(7,'correct','fb-7-b')">ב.&nbsp; "אני מבין אותך לגמרי. תן לי רגע לבדוק את החשבון שלך במערכת"</button>
+      <button class="option-btn" onclick="answer(7,'wrong','fb-7-c')">ג.&nbsp; "אולי טעית בחישוב?"</button>
+    </div>
+    <div id="fb-7-a" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      <strong>לא מקצועי.</strong> אתה מאשר תקלה לפני שבדקת. תמיד קודם מקשיבים ובודקים.
+    </div>
+    <div id="fb-7-b" class="feedback correct-fb">
+      <span class="feedback-icon">&#9989;</span>
+      <strong>מעולה!</strong> הראית אמפתיה ומיד עברת לפעולה. זו בדיוק הפתיחה הנכונה עם לקוח כועס.
+    </div>
+    <div id="fb-7-c" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      <strong>לעולם לא מטילים ספק בלקוח.</strong> זה מעצים את הכעס ופוגע באמון.
+    </div>
+    <div class="btn-row" id="actions-7">
+      <button class="btn secondary hidden" id="retry-7" onclick="retry(7)">&#8635; נסה שוב</button>
+      <button class="btn hidden" id="next-7" onclick="goTo(8)">המשך &#8592;</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 8 — ת"2 Q2 הבנת הפנייה ══ -->
+  <div id="screen-8" class="card hidden">
+    <div class="scenario-tag">&#128276; <strong>תרחיש 2</strong></div>
+    <div class="badge">שלב 2 — הבנת הפנייה</div>
+    <div class="dialog-box">
+      <div class="dialog-label">&#128172; הלקוח ממשיך:</div>
+      <div class="dialog-text">"אני לקוח שלכם כבר 5 שנים ואף פעם לא היה לי בעיה. אני רוצה הסבר עכשיו."</div>
+    </div>
+    <div class="question-text">מה אתה עושה?</div>
+    <div class="options" id="options-8">
+      <button class="option-btn" onclick="answer(8,'wrong','fb-8-a')">א.&nbsp; אומר לו: "כנראה השתנה המחיר, זה קורה"</button>
+      <button class="option-btn" onclick="answer(8,'correct','fb-8-b')">ב.&nbsp; מסכם: "אם הבנתי נכון, חויבת 150 ש"ח יותר מהרגיל ואתה רוצה להבין למה. נכון?" — ופותח את המנהלת</button>
+      <button class="option-btn" onclick="answer(8,'wrong','fb-8-c')">ג.&nbsp; שואל: "מתי שמת לב לזה?"</button>
+    </div>
+    <div id="fb-8-a" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      לא מוסרים מידע לפני שבדקנו. ותיקות הלקוח לא רלוונטית לפני שהבנת מה קרה.
+    </div>
+    <div id="fb-8-b" class="feedback correct-fb">
+      <span class="feedback-icon">&#9989;</span>
+      <strong>מושלם!</strong> סיכום בחזרה מראה שהאזנת ומיד עוברים לבדיקה. זו הדרך הנכונה.
+    </div>
+    <div id="fb-8-c" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      שאלה זו לא עוזרת לטיפול. קודם תבין את הפנייה ואז בדוק במנהלת.
+    </div>
+    <div class="btn-row" id="actions-8">
+      <button class="btn secondary hidden" id="retry-8" onclick="retry(8)">&#8635; נסה שוב</button>
+      <button class="btn hidden" id="next-8" onclick="goTo(9)">המשך &#8592;</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 9 — ת"2 Q3 חיפוש ══ -->
+  <div id="screen-9" class="card hidden">
+    <div class="scenario-tag">&#128276; <strong>תרחיש 2</strong></div>
+    <div class="badge">שלב 3 — חיפוש במנהלת</div>
+    <div class="status-box">&#128187; פתחת את מנהלת הידע. יש לפניך תיבת חיפוש. הלקוח ממתין.</div>
+    <div class="question-text">מה אתה מקליד בחיפוש?</div>
+    <div class="options" id="options-9">
+      <button class="option-btn" onclick="answer(9,'wrong','fb-9-a')">א.&nbsp; "לקוחות ותיקים"</button>
+      <button class="option-btn" onclick="answer(9,'correct','fb-9-b')">ב.&nbsp; "עדכון מחירים" או "שינוי תעריף"</button>
+      <button class="option-btn" onclick="answer(9,'wrong','fb-9-c')">ג.&nbsp; "חיובים"</button>
+    </div>
+    <div id="fb-9-a" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      זו לא מילת מפתח לנוהל. חפש לפי <strong>הפעולה</strong>, לא לפי סוג הלקוח.
+    </div>
+    <div id="fb-9-b" class="feedback correct-fb">
+      <span class="feedback-icon">&#9989;</span>
+      <strong>מעולה!</strong> מילת מפתח ספציפית = תוצאה מדויקת תוך שניות.
+    </div>
+    <div id="fb-9-c" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      <strong>כללי מדי.</strong> תקבל תוצאות רבות. תמיד חפש את הפעולה הספציפית.
+    </div>
+    <div class="btn-row" id="actions-9">
+      <button class="btn secondary hidden" id="retry-9" onclick="retry(9)">&#8635; נסה שוב</button>
+      <button class="btn hidden" id="next-9" onclick="goTo(10)">המשך &#8592;</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 10 — ת"2 Q4 מסירת מידע ══ -->
+  <div id="screen-10" class="card hidden">
+    <div class="scenario-tag">&#128276; <strong>תרחיש 2</strong></div>
+    <div class="badge">שלב 4 — מסירת מידע</div>
+    <div class="system-box">
+      <div class="system-box-label">&#128196; מנהלת הידע — עדכון תעריפים</div>
+      <div class="system-box-text">
+        <strong>החל מחודש זה</strong> עודכנו תעריפי הבסיס ב-150 ש"ח.<br/>
+        לקוחות קיבלו הודעה ב-SMS לפני 30 יום.
+      </div>
+    </div>
+    <div class="question-text">הלקוח ממתין לתשובה. מה אתה אומר?</div>
+    <div class="options" id="options-10">
+      <button class="option-btn" onclick="answer(10,'wrong','fb-10-a')">א.&nbsp; קורא לו את הנוהל המלא כפי שכתוב</button>
+      <button class="option-btn" onclick="answer(10,'correct','fb-10-b')">ב.&nbsp; "בדקתי. החל מהחודש עודכן התעריף ב-150 ש"ח. ההודעה נשלחה ב-SMS לפני חודש — אוכל לבדוק אם הגיעה אליך."</button>
+      <button class="option-btn" onclick="answer(10,'wrong','fb-10-c')">ג.&nbsp; "זה לא אשמתנו, נשלחה הודעה"</button>
+    </div>
+    <div id="fb-10-a" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      קריאת נוהל ללקוח נשמע <strong>רובוטי ומבלבל</strong>. תמיד נסח בשפה אנושית.
+    </div>
+    <div id="fb-10-b" class="feedback correct-fb">
+      <span class="feedback-icon">&#9989;</span>
+      <strong>מושלם!</strong> מידע מדויק, שפה אנושית, והצעת פעולה נוספת. זו סגירה מקצועית.
+    </div>
+    <div id="fb-10-c" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      <strong>לעולם לא מאשימים את הלקוח.</strong> גם אם צודקים — הדרך להגיד זאת חשובה לא פחות מהתוכן.
+    </div>
+    <div class="btn-row" id="actions-10">
+      <button class="btn secondary hidden" id="retry-10" onclick="retry(10)">&#8635; נסה שוב</button>
+      <button class="btn hidden" id="next-10" onclick="goTo(11)">המשך לשאלון &#8592;</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 11 — QUIZ ══ -->
+  <div id="screen-11" class="card hidden">
+    <div class="badge">&#127381; שאלון סיום — סידור שלבים</div>
+    <div class="quiz-instructions">
+      גרור כל שלב למקום הנכון בשיחה. <strong style="color:var(--text);">הפאנל הוסר</strong> — עכשיו אתה עובד לבד.
+    </div>
+    <ul class="quiz-list" id="quiz-list">
+      <li class="quiz-item" draggable="true" data-id="4">
+        <span class="quiz-pos">1</span>
+        <span class="quiz-handle">&#8942;</span>
+        <span class="quiz-label">וידוא הבנה</span>
+      </li>
+      <li class="quiz-item" draggable="true" data-id="1">
+        <span class="quiz-pos">2</span>
+        <span class="quiz-handle">&#8942;</span>
+        <span class="quiz-label">פתיחה וזיהוי</span>
+      </li>
+      <li class="quiz-item" draggable="true" data-id="3">
+        <span class="quiz-pos">3</span>
+        <span class="quiz-handle">&#8942;</span>
+        <span class="quiz-label">טיפול עם מנהלת</span>
+      </li>
+      <li class="quiz-item" draggable="true" data-id="5">
+        <span class="quiz-pos">4</span>
+        <span class="quiz-handle">&#8942;</span>
+        <span class="quiz-label">סגירה חיובית</span>
+      </li>
+      <li class="quiz-item" draggable="true" data-id="2">
+        <span class="quiz-pos">5</span>
+        <span class="quiz-handle">&#8942;</span>
+        <span class="quiz-label">הבנת הפנייה</span>
+      </li>
+    </ul>
+    <div id="fb-quiz-correct" class="feedback correct-fb">
+      <span class="feedback-icon">&#9989;</span>
+      <strong>מעולה!</strong> זה בדיוק הסדר שהופך שיחה לשיחה מנצחת.
+    </div>
+    <div id="fb-quiz-wrong" class="feedback wrong-fb">
+      <span class="feedback-icon">&#10060;</span>
+      <strong>לא מדויק.</strong> נסה שוב. חשוב על הלוגיקה של השיחה — מה קודם למה?
+    </div>
+    <div class="btn-row" style="margin-top:auto;">
+      <button class="btn" onclick="checkQuiz()">&#10003; בדוק את הסדר</button>
+      <button class="btn secondary hidden" id="quiz-retry" onclick="resetQuiz()">&#8635; נסה שוב</button>
+      <button class="btn hidden" id="quiz-next" onclick="goTo(12)">סיום &#8592;</button>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN 12 — FINAL COMPLETION ══ -->
+  <div id="screen-12" class="card hidden">
     <div class="completion-header">
       <div class="completion-icon">&#127942;</div>
-      <div class="completion-title">כל הכבוד!</div>
-      <div class="completion-sub">סיימת את הסימולציה בהצלחה</div>
+      <div class="completion-title">כל הכבוד! סיימת את הסימולציה</div>
+      <div class="completion-sub">2 תרחישים + שאלון — הכל ירוק!</div>
     </div>
-
     <div class="checkmarks">
       <div class="checkmark-item">
         <span class="check-icon">&#10003;</span>
-        <span>פתחת את השיחה בצורה <strong>מקצועית</strong></span>
+        <span>ניהלת שיחת ביטול חוזה בצורה <strong>מקצועית</strong></span>
       </div>
       <div class="checkmark-item">
         <span class="check-icon">&#10003;</span>
-        <span>סיכמת את הפנייה <strong>לפני שעברת לטיפול</strong></span>
+        <span>ניהלת שיחת תלונה על חיוב בצורה <strong>נכונה</strong></span>
       </div>
       <div class="checkmark-item">
         <span class="check-icon">&#10003;</span>
-        <span>חיפשת במנהלת לפי <strong>מילת מפתח מדויקת</strong></span>
+        <span>הפגנת שימוש נכון <strong>במנהלת הידע</strong></span>
       </div>
       <div class="checkmark-item">
         <span class="check-icon">&#10003;</span>
-        <span>מסרת מידע <strong>בשפה פשוטה</strong> — לא ציטוט</span>
+        <span>סידרת את שלבי השיחה <strong>בסדר הנכון</strong></span>
       </div>
     </div>
-
     <div class="tip-box">
-      &#128161; <strong>זכור לשיחה הבאה:</strong><br/>
-      פתיחה מסודרת + מנהלת פתוחה + מידע מדויק + סגירה חמה = <strong>שיחה מנצחת.</strong>
+      &#128161; פתיחה מסודרת + מנהלת פתוחה + מידע מדויק + סגירה חמה = <strong>שיחה מנצחת.</strong>
     </div>
-
-    <div class="text-center" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:auto;">
-      <button class="btn" onclick="restart()">&#8635; &nbsp;התחל מחדש</button>
-      <button class="btn secondary" onclick="printCard()">&#128438; &nbsp;הדפס כרטיס עזר</button>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:auto;">
+      <button class="btn" onclick="printCard()">&#128438; &nbsp;הורד כרטיס עזר</button>
+      <button class="btn secondary" onclick="restart()">&#8635; &nbsp;התחל מחדש</button>
     </div>
   </div>
 
@@ -810,21 +1045,21 @@
         <div class="pc-step-icon">&#128222;</div>
         <div class="pc-step-body">
           <div class="pc-step-label">1. פתח</div>
-          <div class="pc-step-desc">שם החברה + שמך + הצעת עזרה</div>
+          <div class="pc-step-desc">שם החברה, זיהוי ועזרה</div>
         </div>
       </div>
       <div class="pc-step">
         <div class="pc-step-icon">&#128065;</div>
         <div class="pc-step-body">
           <div class="pc-step-label">2. הבן</div>
-          <div class="pc-step-desc">תן ללקוח לדבר + סכם בחזרה</div>
+          <div class="pc-step-desc">האזן וסכם בחזרה</div>
         </div>
       </div>
       <div class="pc-step">
         <div class="pc-step-icon">&#128196;</div>
         <div class="pc-step-body">
           <div class="pc-step-label">3. טפל</div>
-          <div class="pc-step-desc">פתח מנהלת + חפש מילת מפתח + מסור בדיוק</div>
+          <div class="pc-step-desc">פתח מנהלת, חפש ומסור בדיוק</div>
         </div>
       </div>
       <div class="pc-step">
@@ -838,7 +1073,7 @@
         <div class="pc-step-icon">&#127881;</div>
         <div class="pc-step-body">
           <div class="pc-step-label">5. סגור</div>
-          <div class="pc-step-desc">תודה + שם הלקוח + סיכום קצר</div>
+          <div class="pc-step-desc">תודה, שם וסיכום קצר</div>
         </div>
       </div>
     </div>
@@ -852,19 +1087,19 @@
 <script>
   window.addEventListener('load', function() {
     setTimeout(function() {
-      var ls = document.getElementById('loading-screen');
-      ls.classList.add('hidden');
+      document.getElementById('loading-screen').classList.add('hidden');
       goTo(1);
     }, 2000);
   });
 
-  // screen → sidebar step (screens 2-5 map to steps 1-4)
-  var screenToStep = { 2: 1, 3: 2, 4: 3, 5: 4 };
+  // screen → sidebar step (1-4)
+  var screenToStep = { 2:1, 3:2, 4:3, 5:4, 7:1, 8:2, 9:3, 10:4 };
+
+  // screen → progress dot (1-9); screens 1,6,12 have no dot
+  var screenToDot = { 2:1, 3:2, 4:3, 5:4, 7:5, 8:6, 9:7, 10:8, 11:9 };
 
   function goTo(n) {
-    document.querySelectorAll('[id^="screen-"]').forEach(function(s) {
-      s.classList.add('hidden');
-    });
+    document.querySelectorAll('[id^="screen-"]').forEach(function(s) { s.classList.add('hidden'); });
     var target = document.getElementById('screen-' + n);
     if (!target) return;
     target.classList.remove('hidden');
@@ -873,105 +1108,153 @@
     target.style.animation = '';
     updateProgress(n);
     updateSidebar(n);
+    if (n === 11) initQuiz();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function updateSidebar(n) {
-    var sb = document.getElementById('sidebar');
-    var isQuestion = (n >= 2 && n <= 5);
-    sb.classList.toggle('visible', isQuestion);
-    for (var i = 1; i <= 5; i++) {
-      var el = document.getElementById('sb-' + i);
-      el.classList.toggle('active', isQuestion && screenToStep[n] === i);
-    }
   }
 
   function updateProgress(n) {
     var bar = document.getElementById('progress-bar');
-    if (n <= 1) { bar.classList.remove('visible'); return; }
+    var noBar = (n === 1 || n === 6 || n === 12);
+    if (noBar) { bar.classList.remove('visible'); return; }
     bar.classList.add('visible');
-    for (var i = 1; i <= 5; i++) {
+    var cur = screenToDot[n] || 0;
+    for (var i = 1; i <= 9; i++) {
       var dot = document.getElementById('dot-' + i);
-      var dotScreen = i + 1;
       dot.classList.remove('active', 'done');
-      if (dotScreen < n) dot.classList.add('done');
-      else if (dotScreen === n) dot.classList.add('active');
+      if (i < cur) dot.classList.add('done');
+      else if (i === cur) dot.classList.add('active');
+    }
+  }
+
+  function updateSidebar(n) {
+    var sb = document.getElementById('sidebar');
+    var show = (n >= 2 && n <= 5) || (n >= 7 && n <= 10);
+    sb.classList.toggle('visible', show);
+    for (var i = 1; i <= 5; i++) {
+      document.getElementById('sb-' + i).classList.toggle('active', show && screenToStep[n] === i);
     }
   }
 
   function answer(screenNum, result, fbId) {
     if (result === 'correct') playCorrect(); else playWrong();
-    var opts = document.getElementById('options-' + screenNum);
-    var btns = opts.querySelectorAll('.option-btn');
+    var btns = document.getElementById('options-' + screenNum).querySelectorAll('.option-btn');
     btns.forEach(function(b) {
       b.disabled = true;
-      if (b.getAttribute('onclick').indexOf(fbId) !== -1) {
+      if (b.getAttribute('onclick').indexOf(fbId) !== -1)
         b.classList.add(result === 'correct' ? 'correct' : 'wrong');
-      }
     });
     document.getElementById(fbId).classList.add('show');
-    if (result === 'correct') {
-      document.getElementById('next-' + screenNum).classList.remove('hidden');
-    } else {
-      document.getElementById('retry-' + screenNum).classList.remove('hidden');
-    }
+    if (result === 'correct') document.getElementById('next-' + screenNum).classList.remove('hidden');
+    else document.getElementById('retry-' + screenNum).classList.remove('hidden');
   }
 
   function retry(screenNum) {
     var opts = document.getElementById('options-' + screenNum);
+    if (!opts) return;
     opts.querySelectorAll('.option-btn').forEach(function(b) {
       b.disabled = false;
       b.classList.remove('correct', 'wrong');
     });
-    document.querySelectorAll('[id^="fb-' + screenNum + '-"]').forEach(function(f) {
-      f.classList.remove('show');
-    });
+    document.querySelectorAll('[id^="fb-' + screenNum + '-"]').forEach(function(f) { f.classList.remove('show'); });
     document.getElementById('retry-' + screenNum).classList.add('hidden');
     document.getElementById('next-' + screenNum).classList.add('hidden');
   }
 
   function restart() {
-    [2, 3, 4, 5].forEach(function(s) { retry(s); });
+    [2,3,4,5,7,8,9,10].forEach(function(s) { retry(s); });
+    resetQuiz();
     document.getElementById('progress-bar').classList.remove('visible');
+    document.getElementById('sidebar').classList.remove('visible');
     goTo(1);
   }
 
-  function printCard() {
-    window.print();
+  // ── QUIZ ──
+  var dragSrc = null;
+
+  function initQuiz() {
+    var list = document.getElementById('quiz-list');
+    if (list.dataset.init) return;
+    list.dataset.init = '1';
+    updateQuizPositions();
+    list.querySelectorAll('.quiz-item').forEach(function(item) {
+      item.addEventListener('dragstart', function(e) {
+        dragSrc = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      item.addEventListener('dragend', function() {
+        this.classList.remove('dragging');
+        list.querySelectorAll('.quiz-item').forEach(function(i) { i.classList.remove('drag-over'); });
+        updateQuizPositions();
+      });
+      item.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        if (this !== dragSrc) this.classList.add('drag-over');
+      });
+      item.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+      item.addEventListener('drop', function(e) {
+        e.stopPropagation(); e.preventDefault();
+        if (this !== dragSrc) {
+          var all = Array.from(list.children);
+          var si = all.indexOf(dragSrc), ti = all.indexOf(this);
+          list.insertBefore(dragSrc, si < ti ? this.nextSibling : this);
+          updateQuizPositions();
+        }
+        this.classList.remove('drag-over');
+      });
+    });
   }
 
+  function updateQuizPositions() {
+    document.querySelectorAll('#quiz-list .quiz-item').forEach(function(item, idx) {
+      item.querySelector('.quiz-pos').textContent = idx + 1;
+    });
+  }
+
+  function checkQuiz() {
+    var items = document.querySelectorAll('#quiz-list .quiz-item');
+    var order = Array.from(items).map(function(i) { return i.getAttribute('data-id'); });
+    var ok = order.join(',') === '1,2,3,4,5';
+    if (ok) playCorrect(); else playWrong();
+    document.getElementById('fb-quiz-correct').classList.toggle('show', ok);
+    document.getElementById('fb-quiz-wrong').classList.toggle('show', !ok);
+    document.getElementById('quiz-next').classList.toggle('hidden', !ok);
+    document.getElementById('quiz-retry').classList.toggle('hidden', ok);
+  }
+
+  function resetQuiz() {
+    var list = document.getElementById('quiz-list');
+    if (!list) return;
+    var items = Array.from(list.querySelectorAll('.quiz-item'));
+    ['4','1','3','5','2'].forEach(function(id) {
+      var item = items.find(function(i) { return i.getAttribute('data-id') === id; });
+      if (item) list.appendChild(item);
+    });
+    updateQuizPositions();
+    ['fb-quiz-correct','fb-quiz-wrong'].forEach(function(id) { document.getElementById(id).classList.remove('show'); });
+    document.getElementById('quiz-next').classList.add('hidden');
+    document.getElementById('quiz-retry').classList.add('hidden');
+  }
+
+  function printCard() { window.print(); }
+
+  // ── AUDIO ──
   var audioCtx = null;
   function getCtx() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     return audioCtx;
   }
-
-  function playTone(freq, startTime, duration, ctx) {
-    var osc = ctx.createOscillator();
-    var gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+  function playTone(freq, t, dur, ctx) {
+    var osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, startTime);
-    gain.gain.setValueAtTime(0.12, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-    osc.start(startTime);
-    osc.stop(startTime + duration);
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0.12, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.start(t); osc.stop(t + dur);
   }
-
-  function playCorrect() {
-    var ctx = getCtx();
-    var now = ctx.currentTime;
-    playTone(523, now, 0.15, ctx);
-    playTone(659, now + 0.16, 0.15, ctx);
-  }
-
-  function playWrong() {
-    var ctx = getCtx();
-    var now = ctx.currentTime;
-    playTone(300, now, 0.2, ctx);
-    playTone(200, now + 0.21, 0.2, ctx);
-  }
+  function playCorrect() { var c=getCtx(),n=c.currentTime; playTone(523,n,0.15,c); playTone(659,n+0.16,0.15,c); }
+  function playWrong()   { var c=getCtx(),n=c.currentTime; playTone(300,n,0.2,c);  playTone(200,n+0.21,0.2,c); }
 </script>
 </body>
 </html>
